@@ -1,102 +1,66 @@
 import classes from "./Table.module.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const Table = () => {
-  const [isChecked, setIsChecked] = useState(false);
-  const [data, setData] = useState([]);
-  const [lastData, setLastData] = useState([]);
-  const [id, setId] = useState("");
+  const newCategoryRef = useRef();
+  const [showInput, setShowInput] = useState(false);
+  const [hoverId, setHoverId] = useState("");
   const [filterText, setFilterText] = useState("");
-  const [changeCategory, setChangeCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+  const [categoryData, setCategoryData] = useState([]);
 
-  const changeCategoryHandler = () => {
-    setChangeCategory(!changeCategory);
-  };
-
-  function fetchData() {
-    fetch(
-      "https://islemler-c05ec-default-rtdb.europe-west1.firebasedatabase.app/islemler.json"
-    )
+  function fetchCategory() {
+    fetch("http://bc04-46-1-227-153.ngrok.io/categories")
       .then((response) => {
         return response.json();
       })
       .then((data) => {
-        const loadedData = [];
-
-        for (const key in data) {
-          loadedData.push({
-            id: data[key].PFM_TRX_CODE,
-            category: data[key].CATEGORY,
-            trx_definition: data[key].TRX_DEFINITION,
-            trx_description: data[key].TRX_DESCRIPTION,
-            source_trx_code: data[key].SOURCE_TRX_CODE,
-            source_owner: data[key].SOURCE_OWNER,
-            business_owner: data[key].BUSINESS_OWNER,
-            trx_created: data[key].TRX_CREATED,
-            trx_update: data[key].TRX_UPDATE,
-            trx_created_date: data[key].TRX_CREATED_DATE,
-            trx_update_date: data[key].TRX_UPDATE_DATE,
-          });
-        }
-
-        setData(loadedData);
+        setCategoryData(data);
       });
   }
 
-  function fetchLastData() {
+  const confirmChangeCategory = (e) => {
+    e.preventDefault();
+
+    console.log(hoverId);
+    console.log(newCategory);
+
     fetch(
-      "https://islemler-c05ec-default-rtdb.europe-west1.firebasedatabase.app/sonislemler.json"
+      `http://bc04-46-1-227-153.ngrok.io/categories/${hoverId}/${newCategory}`,
+      {
+        method: "PUT",
+      }
     )
       .then((response) => {
+        if (response.ok) {
+          window.location.reload();
+        } else if (!response.ok) {
+          throw new Error("Bir hata oldu, yeniden deneyiniz!");
+        }
         return response.json();
       })
       .then((data) => {
-        const loadedData = [];
-
-        for (const key in data) {
-          loadedData.push({
-            id: data[key].PFM_TRX_CODE,
-            trx_description: data[key].TRX_DESCRIPTION,
-            trx_date: data[key].TRX_DATE,
-          });
-        }
-
-        setLastData(loadedData);
-      });
-  }
-
-  const categories = data.map((item) => item.category);
-
-  // categories.map((item) => console.log(item));
-
-  const checkboxHandler = (event) => {
-    const { name } = event.target;
-
-    setId(!isChecked ? name : "");
-    setIsChecked(!isChecked);
+        console.log(data);
+      })
+      .catch((err) => alert(err.message));
   };
 
   const onFilterTextHandler = (e) => {
     setFilterText(e.target.value.toLocaleLowerCase());
   };
 
-  const filteredItems = data.filter(
-    (item) =>
-      item.id.toLocaleLowerCase().includes(filterText) ||
-      item.trx_description.toLocaleLowerCase().includes(filterText)
-  );
-
-  const itemsToDisplay = filterText ? filteredItems : data;
-
-  const filteredLastData = lastData.filter((item) => item.id.includes(id));
-
   //   console.log(data.map((item) => item).filter((item) => item.id === id));
 
   useEffect(() => {
-    fetchData();
-    fetchLastData();
+    fetchCategory();
     return () => {};
   }, []);
+
+  categoryData.sort((a, b) => (a.mcc_code > b.mcc_code ? 1 : -1));
+
+  const filteredItems = categoryData.filter((item) =>
+    item.category_name.toLocaleLowerCase().includes(filterText)
+  );
 
   return (
     <div className={classes.container}>
@@ -121,93 +85,79 @@ const Table = () => {
           <input
             type="text"
             id="search"
-            placeholder="İşlem kodu veya Açıklama"
+            placeholder="Category Name"
             value={filterText}
             onChange={onFilterTextHandler}
           />
         </div>
-        <div className={classes.buttons}>
-          <button onClick={changeCategoryHandler}>Değiştir</button>
-          <button>Onayla</button>
-        </div>
+        <div></div>
       </div>
       <table>
         <thead>
           <tr>
-            <th>PFM TRX CODE</th>
-            <th>CATEGORY</th>
-            <th>TRX DEFINITION</th>
-            <th>TRX DESCRIPTION</th>
-            <th>SOURCE TRX CODE</th>
-            <th>SOURCE OWNER</th>
-            <th>BUSINESS OWNER</th>
-            <th>TRX CREATED</th>
-            <th>TRX UPDATE</th>
-            <th>TRX CREATED DATE</th>
-            <th>TRX UPDATE DATE</th>
+            <th>PFM MCC CODE</th>
+            <th>CATEGORY NAME</th>
+            <th>CATEGORY NAME PREVIOUS</th>
+            <th>UPDATE DATE</th>
           </tr>
         </thead>
 
-        {itemsToDisplay.map((item) => {
+        {filteredItems.map((item) => {
           return (
-            <tbody key={item.id}>
-              <tr key={item.id}>
-                <td className={classes.check}>
-                  {item.id}
+            <tbody key={item.mcc_code}>
+              <tr key={item.mcc_code}>
+                <td className={classes.check}>{item.mcc_code}</td>
 
-                  <input
-                    type="checkbox"
-                    checked={item[item.id]}
-                    name={item.id}
-                    onChange={checkboxHandler}
-                  />
+                <td className={classes.categoryName} id={item.mcc_code}>
+                  {item.category_name}
+                  {showInput && hoverId === item.mcc_code && (
+                    <form onSubmit={confirmChangeCategory}>
+                      <input
+                        type="text"
+                        ref={newCategoryRef}
+                        onChange={() =>
+                          setNewCategory(newCategoryRef.current.value)
+                        }
+                      />
+                      <button type="submit" className={classes.confirmBtn}>
+                        Güncelle
+                      </button>
+                    </form>
+                  )}
+                  {!showInput && (
+                    <button
+                      className={classes.changeButton}
+                      onClick={() => {
+                        setShowInput(true);
+                        setHoverId(item.mcc_code);
+                      }}
+                      id={item.mcc_code}
+                    >
+                      Değiştir
+                    </button>
+                  )}
+                  {showInput && hoverId === item.mcc_code && (
+                    <div>
+                      <button
+                        onClick={() => {
+                          setShowInput(false);
+                          setHoverId("");
+                        }}
+                        className={classes.cancelBtn}
+                      >
+                        İptal
+                      </button>
+                    </div>
+                  )}
                 </td>
-                {!changeCategory ? (
-                  <td>{item.category}</td>
-                ) : (
-                  <td>
-                    <select disabled={item.id !== id} name={item.id}>
-                      <option value={item.category}>{item.category}</option>
-                      {categories.map((item) => {
-                        return <option value="">{item}</option>;
-                      })}
-                    </select>
-                  </td>
-                )}
-                <td>{item.trx_definition}</td>
-                <td>{item.trx_description}</td>
-                <td>{item.source_trx_code}</td>
-                <td>{item.source_owner}</td>
-                <td>{item.business_owner}</td>
-                <td>{item.trx_created}</td>
-                <td>{item.trx_update}</td>
-                <td>{item.trx_created_date}</td>
-                <td>{item.trx_update_date}</td>
+
+                <td>{item.category_name_previous}</td>
+                <td>{item.update_date}</td>
               </tr>
             </tbody>
           );
         })}
       </table>
-      {id && <h1>İLGİLİ SON İŞLEMLER</h1>}
-      {id && (
-        <table>
-          <thead>
-            <th>PFM TRX CODE</th>
-            <th>TRX DESCRIPTION</th>
-            <th>TRX DATE</th>
-          </thead>
-
-          {filteredLastData.map((item) => {
-            return (
-              <tbody>
-                <td>{item.id}</td>
-                <td>{item.trx_description}</td>
-                <td>{item.trx_date}</td>
-              </tbody>
-            );
-          })}
-        </table>
-      )}
     </div>
   );
 };

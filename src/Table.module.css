@@ -47,7 +47,7 @@ input {
 }
 
 button {
-  width: 8rem;
+  width: 7rem;
   background-color: rgb(13, 74, 128);
   color: rgb(234, 234, 246);
   border-radius: 1rem;
@@ -79,24 +79,31 @@ table {
 }
 
 th {
-  min-width: 15rem;
   text-align: start;
   background-color: rgb(20, 95, 160);
   color: white;
   padding: 0.5rem;
+  height: 4rem;
+  font-size: 2rem;
 }
 
 td {
   padding: 0.5rem;
   background-color: rgb(234, 234, 246);
+  height: 3rem;
+  font-size: 1.5rem;
 }
 
 td:hover {
   background-color: rgb(209, 209, 219);
 }
 
-.check {
+/* td:hover button {
+  opacity: 1;
+} */
+
+.categoryName {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
