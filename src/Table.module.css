@@ -38,7 +38,6 @@ input {
 .nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
 }
 
 .buttons {
@@ -97,10 +96,6 @@ td {
 td:hover {
   background-color: rgb(209, 209, 219);
 }
-
-/* td:hover button {
-  opacity: 1;
-} */
 
 .categoryName {
   display: flex;
